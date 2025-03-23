@@ -366,7 +366,7 @@ Let me show you how the system flows and then update the SQL schema accordingly.
 
 ```mermaid
 graph TD
-    A[Temperature Sensor (IoT Device)] -->|Every 10s| B[Azure Function - Ingest]
+    A[Temperature Sensor IoT Device] -->|Every 10s| B[Azure Function - Ingest]
     B --> C[Azure Service Bus Topic]
     C --> D[Azure Function - DB Writer]
     D --> E[Azure SQL Database]
@@ -389,6 +389,127 @@ graph TD
 | **Azure Monitor / Logic App** | Optionally used for triggering alerts |
 
 ---
+Awesome! Here's a **Mermaid Entity-Relationship (ER) Diagram** based on the SQL schema I shared earlier. This will give you a **visual overview** of how everything connects in the system – from customers and orders to real-time temperature tracking and IoT device integration.
+
+---
+
+### 📌 **Mermaid ER Diagram**
+
+```mermaid
+erDiagram
+
+    Customers ||--o{ Orders : places
+    Orders ||--|{ OrderItems : contains
+    Orders ||--o{ Deliveries : scheduled_for
+    Deliveries ||--|| Drivers : assigned_to
+    Deliveries ||--|| Trucks : uses
+    Deliveries ||--o{ TemperatureReadings : records
+    TemperatureReadings ||--o{ TemperatureAlerts : triggers
+    Trucks ||--o{ Devices : equipped_with
+
+    Customers {
+        int CustomerID PK
+        string CustomerName
+        string Address
+        string ContactNumber
+        string Email
+        string BusinessType
+    }
+
+    Orders {
+        int OrderID PK
+        int CustomerID FK
+        datetime OrderDate
+        string OrderChannel
+        datetime DeliveryDate
+        string Status
+    }
+
+    OrderItems {
+        int OrderItemID PK
+        int OrderID FK
+        string ItemName
+        int Quantity
+        decimal UnitPrice
+    }
+
+    Drivers {
+        int DriverID PK
+        string DriverName
+        string MobileNumber
+        int AssignedTruckID
+    }
+
+    Trucks {
+        int TruckID PK
+        string TruckNumber
+        string TruckModel
+        decimal MaxCapacityKG
+        decimal TemperatureThresholdMin
+        decimal TemperatureThresholdMax
+    }
+
+    Deliveries {
+        int DeliveryID PK
+        int OrderID FK
+        int DriverID FK
+        int TruckID FK
+        datetime StartTime
+        datetime EndTime
+        string DeliveryStatus
+    }
+
+    TemperatureReadings {
+        bigint ReadingID PK
+        int DeliveryID FK
+        datetime ReadingTime
+        decimal TemperatureValue
+        string Status
+    }
+
+    TemperatureAlerts {
+        int AlertID PK
+        bigint ReadingID FK
+        datetime AlertTime
+        decimal TemperatureValue
+        string AlertType
+    }
+
+    Devices {
+        int DeviceID PK
+        string DeviceType
+        string SerialNumber
+        int AssignedTruckID FK
+        string Status
+    }
+```
+
+---
+
+### 🧠 Suggestions for Power BI Visualization
+
+In **Power BI**, you can use the above schema to create visual dashboards:
+
+#### 🔍 Suggested Dashboards:
+1. **Real-time Temperature Dashboard**
+   - Line chart: `TemperatureReadings.TemperatureValue` over `ReadingTime`
+   - Filters: `TruckID`, `DeliveryID`, `Status`
+
+2. **Alerts Overview**
+   - KPI card: Total Alerts Today
+   - Table: `TemperatureAlerts` by `TruckID`, `AlertType`
+
+3. **Delivery Risk Heatmap**
+   - Matrix: Customer vs. Alert Count
+   - Color-coded for "High Risk" deliveries
+
+4. **Cold Chain Compliance Report**
+   - % of deliveries within optimal temperature range
+   - Bar chart: Deliveries with >3 alerts
+
+---
+
+Would you like help with the Power BI data model or a sample .pbix structure?
 
 ## 📦 Database Tables (Updated with Azure Metadata)
 
