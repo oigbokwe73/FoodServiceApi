@@ -1,6 +1,4 @@
 
-Here's a comprehensive **SQL database schema** that supports the described scenario for the UK food service delivery client using **IoT-connected mobile devices** (e.g., Bluetooth printers and temperature sensors). This schema will help **track real-time temperature data**, **delivery information**, and support **analytics** on delivery quality and risks.
-
 ---
 
 ### 🍽️ **Scenario Summary:**
