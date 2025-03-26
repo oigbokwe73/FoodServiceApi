@@ -347,15 +347,6 @@ Let me know if you want:
 - Stored procedures for recording and alerting on sensor data
 - Real-time ingestion pipeline using Azure Functions or IoT Hub
 
-Want a diagram to go along with this?
-
-Great! Since you want to **use Azure Service Bus and Azure Blob Storage** in the solution, we’ll adjust the architecture to incorporate:
-
-- **Azure Service Bus** for real-time **temperature reading ingestion**  
-- **Azure Blob Storage** for long-term **cold storage of raw sensor data**
-
-Let me show you how the system flows and then update the SQL schema accordingly. We'll keep the relational structure but add integration points with Azure services.
-
 ---
 
 ## ✅ Updated IoT Delivery Tracking Solution – Azure-Based Architecture
@@ -387,7 +378,7 @@ graph TD
 | **Azure Monitor / Logic App** | Optionally used for triggering alerts |
 
 ---
-Awesome! Here's a **Mermaid Entity-Relationship (ER) Diagram** based on the SQL schema I shared earlier. This will give you a **visual overview** of how everything connects in the system – from customers and orders to real-time temperature tracking and IoT device integration.
+ **Entity-Relationship (ER) Diagram** based on the SQL schema I shared earlier. This will give you a **visual overview** of how everything connects in the system – from customers and orders to real-time temperature tracking and IoT device integration.
 
 ---
 
