@@ -15,6 +15,23 @@ The client delivers food items to over 30,000 customers across the UK via two pr
 
 ---
 
+## ✅ Updated IoT Delivery Tracking Solution – Azure-Based Architecture
+
+### 🧭 Architecture Overview
+
+```mermaid
+graph TD
+    A[Temperature Sensor IoT Device] -->|Every 10s| B[Azure Function - Ingest]
+    B --> C[Azure Service Bus Topic]
+    C --> D[Azure Function - DB Writer]
+    D --> E[Azure SQL Database]
+    B --> F[Azure Blob Storage - Raw JSON Logs]
+    E --> G[Power BI or Azure Data Explorer]
+    E --> H[Alerts Table for Anomaly Detection]
+```
+
+
+
 ### 🛠️ SQL Database Tables (with explanation)
 
 #### 1. **Customers**
@@ -346,21 +363,6 @@ Let me know if you want:
 - Real-time ingestion pipeline using Azure Functions or IoT Hub
 
 ---
-
-## ✅ Updated IoT Delivery Tracking Solution – Azure-Based Architecture
-
-### 🧭 Architecture Overview
-
-```mermaid
-graph TD
-    A[Temperature Sensor IoT Device] -->|Every 10s| B[Azure Function - Ingest]
-    B --> C[Azure Service Bus Topic]
-    C --> D[Azure Function - DB Writer]
-    D --> E[Azure SQL Database]
-    B --> F[Azure Blob Storage - Raw JSON Logs]
-    E --> G[Power BI or Azure Data Explorer]
-    E --> H[Alerts Table for Anomaly Detection]
-```
 
 ---
 
