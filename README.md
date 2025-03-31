@@ -175,8 +175,6 @@ HAVING COUNT(*) >= 3;
 
 ---
 
-Would you like a **Mermaid ER diagram** or **Power BI schema** for visualization?
-
 
 Based on the solution you described, we'll need to design a relational SQL database that supports the client's logistics, order, delivery, and IoT monitoring capabilities. Here's a breakdown of the SQL database tables required to meet the needs of:
 
