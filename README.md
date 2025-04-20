@@ -364,6 +364,147 @@ Let me know if you want:
 
 ---
 
+
+Set Up Steps 
+
+Creating a serverless API using Azure that leverages Service Bus to communicate with an SQL Database involves several steps. Here's a high-level overview of how you can set this up:
+
+1. **Set Up Azure SQL Database**:
+   - Create an Azure SQL Database instance.
+   - Set up the necessary tables and schemas you'll need for your application.
+
+2. **Create Azure Service Bus**:
+   - Set up an Azure Service Bus namespace.
+   - Within the namespace, create a queue or topic (based on your requirement).
+
+3. **Deploy Serverless API using Azure Functions**:
+   - Create a new Azure Function App.
+   - Develop an HTTP-triggered function that will act as your API endpoint.
+   - In this function, when data is received, send a message to the Service Bus queue or topic.
+
+4. **Deploy 2 Service Bus Triggered Function**:
+   - Create another Azure Function that is triggered by the Service Bus queue or topic.
+   - This function will read the message from the Service Bus and process it. The processing might involve parsing the message and inserting the data into the Azure SQL Database.
+
+5. **Deploy a Timer Triggered Function**:
+   - Create another Azure Function that is triggered when a file is dropped in a container.
+   - This function will stream in a file, read it and place on the service bus topic.
+
+6. **Implement Error Handling**:
+   - Ensure that you have error handling in place. If there's a failure in processing the message and inserting it into the database, you might want to log the error or move the message to a dead-letter queue.
+
+7. **Secure Your Functions**:
+   - Ensure that your HTTP-triggered function (API endpoint) is secured, possibly using Azure Active Directory or function keys.
+
+8. **Optimize & Monitor**:
+   - Monitor the performance of your functions using Azure Monitor and Application Insights.
+   - Optimize the performance, scalability, and cost by adjusting the function's plan (Consumption Plan, Premium Plan, etc.) and tweaking the configurations.
+
+9. **Deployment**:
+   - Deploy your functions to the Azure environment. You can use CI/CD pipelines using tools like Azure DevOps or GitHub Actions for automated deployments.
+
+By following these steps, you'll have a serverless API in Azure that uses Service Bus as a mediator to process data and store it in an SQL Database. This architecture ensures decoupling between data ingestion and processing, adding a layer of resilience and scalability to your solution.
+
+
+## Appplication Setting 
+
+|Key|Value | Comment|
+|:----|:----|:----|
+|AzureWebJobsStorage|[CONNECTION STRING]|RECOMMENDATION :  store in AzureKey Vault.|
+|ConfigurationPath| [CONFIGURATION FOLDER PATH] |Folder is optional
+|ApiKeyName|[API KEY NAME]|Will be passed in the header  :  the file name of the config.
+|AppName| [APPLICATION NAME]| This is the name of the Function App, used in log analytics|
+|StorageAcctName|[STORAGE ACCOUNT NAME]|Example  "AzureWebJobsStorage"|
+|ServiceBusConnectionString|[SERVICE BUS CONNECTION STRING]|Example  "ServiceBusConnectionString".  Recommmended to store in Key vault.|
+|DatabaseConnection|[DATABASE CONNECTION STRING]|Example  "DatabaseConnection". Recommmended to store in Key vault.|
+|TimerInterval|[TIMER_INTERVAL]|Example  "0 */1 * * * *" 1 MIN|
+
+
+> **Note:**  Look at the configuration file in the **Config** Folder and created a Table to record information.
+
+## Configuration Files 
+
+> **Note:** The **Configuration** is located in the  FunctionApp  in a **Config** Folder.
+
+|FileName|Description|
+|:----|:----|
+|D86B0D1870AB4BA0B1F8C2BFD3576EF3.json| **Create Order** |
+|8732858269AF4D4E9B117BC978A4F017.json| **Read Order** |
+|189FBC4178174FF8AB682CCF302C10D7.json| **Update Order** |
+|5A9EC0C8B0614D20A62E00F2FD3394EA.json| **Delete Order** |
+|57B5DE09426E4215A50D9E44795134A1.json| **Create OrderItems** |
+|CC1F0FF8710F45D58C9140A2C99FC2C8.json| **Read OrderItems** |
+|043EE6490D69431FBA02B95E0096B1C3.json| **Update OrderItems** |
+|2056736B50F24A1C90892348ED2BE850.json| **Delete OrderItems** |
+|2BBF7FEFB5824846B150DFC4A91CD46A.json| **Create Drivers** |
+|4CD3B8C3D41E47749C90C76230AAE9D6.json| **Read Drivers** |
+|01E9E8EB971449E5A9C5BB2252782232.json| **Update Drivers** |
+|E1743267D0424A098525B9DE58A5AAE0.json| **Delete Drivers** |
+|3315B90C8283441E96A9C6C4C6AEE135.json| **Create Trucks** |
+|50A07F1A2EC34D3891451BEBFFA90087.json| **Read Trucks** |
+|271938AC73CE4B97A0E3E4E60B07C2D7.json| **Update Trucks** |
+|D677C0576CCE4ADD81F80FF73FE99E6C.json| **Delete Trucks** |
+|07F0DF841D7045829B9ADAFC7E808B79.json| **Create BluetoothDevices** |
+|7F62736F138E4F7F9370FCD19D4C5B0F.json| **Read BluetoothDevices** |
+|2C44F2D7045E42EC89F746AC0EDEAF25.json| **Update BluetoothDevices** |
+|9039A89694684D72AF0A41340ABEEC63.json| **Delete BluetoothDevices** |
+|E2965EE4ED8A42BD9A80360AF1AD897D.json| **Create TemperatureReadings** |
+|3B56C71039564E77BF5783A1CB9CEE63.json| **Read TemperatureReadings** |
+|0243896124A64F718CED736C0D4415EB.json| **Update TemperatureReadings** |
+|0850D3AF32604613BD2E7904BCDA9188.json| **Delete TemperatureReadings** |
+|C8F11CD518B446DDBA76EC7DBA9FEE51.json| **Create TemperatureAlert** |
+|9D86F31022C3479EB53730FCD557FEDA.json| **Read TemperatureAlert** |
+|7E7098A3BD9C46D4B44EB92A678C84B3.json| **Update TemperatureAlert** |
+|501046680CB6415F91886F33D237428D.json| **Delete TemperatureAlert** |
+|27B1257D33614676BAA6AD7B77DD3F49.json| **Create TemperatureThresholds** |
+|AAF0AA76A91E4E7EA1B1C39EF2A87CB5.json| **Read TemperatureThresholds** |
+|0CC1C24E06A846A4843AD90338A68AD3.json| **Update TemperatureThresholds** |
+|2DC1526BDCA94214B5379734C14DD19F.json| **Delete TemperatureThresholds** |
+|1F604AB9343F4C25AF9ADEB8840A3050.json| **Create Devices** |
+|FE52B9F144F640BDAADD1E681FBF0999.json| **Read Devices** |
+|B47536C505414B268A3567455661F862.json| **Update Devices** |
+|B1ED4985CB214D69A4C2A280D7F4618C.json| **Delete Devices** |
+|B18DA134854E444C86D41EFF9429BF95.json| **Create Deliveries** |
+|0AC191E24413400B8E42E1AABAED867B.json| **Read Deliveries** |
+|C08ED3AF6B074935AAC01D65864FDD3B.json| **Update Deliveries** |
+|2A94E084F539459F90A488EA27C1A33D.json| **Delete Deliveries** |
+|5C58E94AA72B4C60A644AB9BE5C049E4.json| **Create Alerts** |
+|634C5839653E4263A665C9A4442333E3.json| **Read Alerts** |
+|C5A32C4A06A14600A5C96942E0BCF266.json| **Update Alerts** |
+|AB3602BB317146C18EF478428CAA29D0.json| **Delete Alerts** |
+|EAB35A0169B34AF2B5B65632289F92CB.json| **Create Customers** |
+|AB2186CD69F94FC18D2F75DC33C0090F.json| **Read Customers** |
+|1326DD4F23C14FC08CCD7DAE13AF314C.json| **Update Customers** |
+|AB00795BF12D4165A33688253EE128CB.json| **Delete Customers** |
+|43EFE991E8614CFB9EDECF1B0FDED37C.json| **Service Bus Trigger for SQL DB** | Receive JSON payload and insert into SQL DB|
+
+> Create the following blob containers and share in azure storage
+
+|ContainerName|Description|
+|:----|:----|
+|config|Location for the configuration files|
+|pickup|Thes are files that are copied from the SFTP share and dropped in the pickup container |
+|processed|These are files the have been parsed and dropped in th processed container|
+
+|Table|Description|
+|:----|:----|
+|csvbatchfiles|Track the CSV parsed files|
+|training[YYYYMMDD]|N0 SQL DataStore|
+
+
+|Share|Description|
+|:----|:----|
+|training[YYYYMMDD]|Create a share location for SFTP to drop files|
+
+## Service Bus Subscription information
+
+|Subscription Name|Description|
+|:----|:----|
+|request|Create a Topic|
+|nosqlmessage|Create a Subscription|
+|sqlmessage|Create a Subscription|
+
+
 ---
 
 ### 🔹 Key Azure Services
