@@ -32,335 +32,277 @@ graph TD
 
 
 
-### 🛠️ SQL Database Tables (with explanation)
+Based on your scenario, here’s a detailed breakdown of the **SQL database schema** using `uniqueidentifier` as primary keys, to support **real-time IoT temperature monitoring**, **delivery tracking**, and **customer satisfaction assurance** for a food delivery operation. This schema allows integration of IoT data, delivery management, and analytics.
 
-#### 1. **Customers**
+---
+
+## 🧠 **Scenario Summary**
+
+The client is the UK's leading food service delivery provider with over 30,000 B2B customers. Orders come via a website or call center. To ensure food quality during deliveries, trucks are equipped with Bluetooth printers and temperature sensors. Real-time temperature readings every 10 seconds are logged to prevent spoilage. If temperatures exceed thresholds, alerts are raised, reducing the chance of rejected goods.
+
+---
+
+## 🗂️ **SQL Database Tables with `uniqueidentifier`**
+
+### 1. **Customers**
+
 ```sql
 CREATE TABLE Customers (
-    CustomerID INT PRIMARY KEY,
-    CustomerName VARCHAR(255),
-    Address TEXT,
-    ContactNumber VARCHAR(20),
-    Email VARCHAR(100),
-    BusinessType VARCHAR(100) -- e.g., restaurant, cafe, etc.
+    CustomerID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    CustomerName NVARCHAR(255),
+    BusinessType NVARCHAR(100), -- e.g., Restaurant, Café, Retailer
+    ContactName NVARCHAR(255),
+    PhoneNumber NVARCHAR(50),
+    Email NVARCHAR(255),
+    Address NVARCHAR(255),
+    City NVARCHAR(100),
+    PostalCode NVARCHAR(20),
+    CreatedDate DATETIME DEFAULT GETDATE()
 );
 ```
 
-#### 2. **Orders**
+---
+
+### 2. **Orders**
+
 ```sql
 CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY,
-    CustomerID INT,
-    OrderDate DATETIME,
-    OrderChannel VARCHAR(50), -- Website or Call Center
+    OrderID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    CustomerID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Customers(CustomerID),
+    OrderDate DATETIME DEFAULT GETDATE(),
     DeliveryDate DATETIME,
-    Status VARCHAR(50), -- e.g., Scheduled, In-Transit, Delivered, Returned
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+    OrderChannel NVARCHAR(50), -- Website, Call Center
+    TotalAmount DECIMAL(10,2),
+    OrderStatus NVARCHAR(50) -- e.g., Pending, Dispatched, Delivered, Returned
 );
 ```
 
-#### 3. **OrderItems**
+---
+
+### 3. **OrderItems**
+
 ```sql
 CREATE TABLE OrderItems (
-    OrderItemID INT PRIMARY KEY,
-    OrderID INT,
-    ItemName VARCHAR(255),
+    OrderItemID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OrderID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Orders(OrderID),
+    ItemName NVARCHAR(255),
     Quantity INT,
     UnitPrice DECIMAL(10,2),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+    TemperatureSensitive BIT -- Indicates if temperature monitoring is needed
 );
 ```
 
-#### 4. **Drivers**
+---
+
+### 4. **Drivers**
+
 ```sql
 CREATE TABLE Drivers (
-    DriverID INT PRIMARY KEY,
-    DriverName VARCHAR(100),
-    MobileNumber VARCHAR(20),
-    AssignedTruckID INT
+    DriverID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    DriverName NVARCHAR(255),
+    MobileNumber NVARCHAR(50),
+    AssignedTruckID UNIQUEIDENTIFIER
 );
 ```
 
-#### 5. **Trucks**
+---
+
+### 5. **Trucks**
+
 ```sql
 CREATE TABLE Trucks (
-    TruckID INT PRIMARY KEY,
-    TruckNumber VARCHAR(50),
-    TruckModel VARCHAR(100),
-    MaxCapacityKG DECIMAL(10,2),
-    TemperatureThresholdMin DECIMAL(5,2),
-    TemperatureThresholdMax DECIMAL(5,2)
+    TruckID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    LicensePlate NVARCHAR(20),
+    BluetoothPrinterID NVARCHAR(100),
+    TemperatureSensorID NVARCHAR(100)
 );
 ```
 
-#### 6. **Deliveries**
+---
+
+### 6. **Deliveries**
+
 ```sql
 CREATE TABLE Deliveries (
-    DeliveryID INT PRIMARY KEY,
-    OrderID INT,
-    DriverID INT,
-    TruckID INT,
+    DeliveryID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OrderID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Orders(OrderID),
+    DriverID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Drivers(DriverID),
+    TruckID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Trucks(TruckID),
     StartTime DATETIME,
     EndTime DATETIME,
-    DeliveryStatus VARCHAR(50), -- e.g., On Route, Completed, Failed
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
-    FOREIGN KEY (DriverID) REFERENCES Drivers(DriverID),
-    FOREIGN KEY (TruckID) REFERENCES Trucks(TruckID)
-);
-```
-
-#### 7. **TemperatureReadings**
-```sql
-CREATE TABLE TemperatureReadings (
-    ReadingID BIGINT PRIMARY KEY,
-    DeliveryID INT,
-    ReadingTime DATETIME,
-    TemperatureValue DECIMAL(5,2), -- e.g., in Celsius
-    Status VARCHAR(20), -- e.g., Normal, Alert
-    FOREIGN KEY (DeliveryID) REFERENCES Deliveries(DeliveryID)
-);
-```
-
-#### 8. **TemperatureAlerts**
-```sql
-CREATE TABLE TemperatureAlerts (
-    AlertID INT PRIMARY KEY,
-    ReadingID BIGINT,
-    AlertTime DATETIME,
-    TemperatureValue DECIMAL(5,2),
-    AlertType VARCHAR(50), -- e.g., Above Threshold, Below Threshold
-    FOREIGN KEY (ReadingID) REFERENCES TemperatureReadings(ReadingID)
-);
-```
-
-#### 9. **Devices**
-```sql
-CREATE TABLE Devices (
-    DeviceID INT PRIMARY KEY,
-    DeviceType VARCHAR(50), -- e.g., TemperatureSensor, BluetoothPrinter
-    SerialNumber VARCHAR(100),
-    AssignedTruckID INT,
-    Status VARCHAR(50), -- Active, Inactive, Maintenance
-    FOREIGN KEY (AssignedTruckID) REFERENCES Trucks(TruckID)
+    DeliveryStatus NVARCHAR(50) -- In-Transit, Completed, Failed
 );
 ```
 
 ---
 
-### 📊 Use Cases Supported
-
-| Use Case | Tables Involved |
-|----------|-----------------|
-| Customer places an order | Customers, Orders, OrderItems |
-| Assign driver and truck for delivery | Deliveries, Drivers, Trucks |
-| Attach IoT device to truck | Devices |
-| Record temperature every 10s | TemperatureReadings |
-| Alert on temperature violation | TemperatureAlerts |
-| Analytics and reporting | TemperatureReadings, Deliveries, Orders |
-
----
-
-### 📈 Example Queries for Analytics
-
-**1. Find deliveries with temperature alerts:**
-```sql
-SELECT d.DeliveryID, o.OrderID, c.CustomerName, tr.TemperatureValue, tr.ReadingTime
-FROM TemperatureAlerts ta
-JOIN TemperatureReadings tr ON ta.ReadingID = tr.ReadingID
-JOIN Deliveries d ON tr.DeliveryID = d.DeliveryID
-JOIN Orders o ON d.OrderID = o.OrderID
-JOIN Customers c ON o.CustomerID = c.CustomerID;
-```
-
-**2. Average delivery temperature per truck:**
-```sql
-SELECT t.TruckNumber, AVG(tr.TemperatureValue) AS AvgTemp
-FROM TemperatureReadings tr
-JOIN Deliveries d ON tr.DeliveryID = d.DeliveryID
-JOIN Trucks t ON d.TruckID = t.TruckID
-GROUP BY t.TruckNumber;
-```
-
-**3. Orders with sustained temperature issues (>3 consecutive readings out of range):**
-```sql
-SELECT DeliveryID, COUNT(*) AS AlertCount
-FROM TemperatureReadings
-WHERE Status = 'Alert'
-GROUP BY DeliveryID
-HAVING COUNT(*) >= 3;
-```
-
----
-
-
-Based on the solution you described, we'll need to design a relational SQL database that supports the client's logistics, order, delivery, and IoT monitoring capabilities. Here's a breakdown of the SQL database tables required to meet the needs of:
-
-1. **Customers placing orders via web or call center**  
-2. **Drivers delivering goods using IoT-connected devices**  
-3. **Bluetooth temperature sensors sending real-time readings every 10 seconds**  
-4. **Analytics and monitoring to identify deliveries with abnormal temperatures**
-
----
-
-## ✅ Database Tables (with relationships)
-
-### 1. `Customers`
-Stores information about each customer.
-
-```sql
-CREATE TABLE Customers (
-    CustomerID INT PRIMARY KEY IDENTITY,
-    Name NVARCHAR(100),
-    BusinessType NVARCHAR(50),
-    Address NVARCHAR(255),
-    City NVARCHAR(50),
-    PostalCode NVARCHAR(20),
-    PhoneNumber NVARCHAR(20),
-    Email NVARCHAR(100)
-);
-```
-
----
-
-### 2. `Orders`
-Tracks individual orders placed by customers.
-
-```sql
-CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY IDENTITY,
-    CustomerID INT FOREIGN KEY REFERENCES Customers(CustomerID),
-    OrderDate DATETIME,
-    OrderChannel NVARCHAR(20), -- 'Web' or 'Call Center'
-    TotalAmount DECIMAL(10,2),
-    DeliveryStatus NVARCHAR(50),
-    ScheduledDeliveryTime DATETIME
-);
-```
-
----
-
-### 3. `OrderItems`
-Stores items associated with each order.
-
-```sql
-CREATE TABLE OrderItems (
-    OrderItemID INT PRIMARY KEY IDENTITY,
-    OrderID INT FOREIGN KEY REFERENCES Orders(OrderID),
-    ItemName NVARCHAR(100),
-    Quantity INT,
-    Unit NVARCHAR(10), -- e.g., 'kg', 'ltr'
-    PricePerUnit DECIMAL(10,2)
-);
-```
-
----
-
-### 4. `Drivers`
-Stores driver information who deliver the orders.
-
-```sql
-CREATE TABLE Drivers (
-    DriverID INT PRIMARY KEY IDENTITY,
-    Name NVARCHAR(100),
-    PhoneNumber NVARCHAR(20),
-    VehicleNumber NVARCHAR(20)
-);
-```
-
----
-
-### 5. `Deliveries`
-Represents each delivery attempt or session.
-
-```sql
-CREATE TABLE Deliveries (
-    DeliveryID INT PRIMARY KEY IDENTITY,
-    OrderID INT FOREIGN KEY REFERENCES Orders(OrderID),
-    DriverID INT FOREIGN KEY REFERENCES Drivers(DriverID),
-    DeliveryStartTime DATETIME,
-    DeliveryEndTime DATETIME,
-    DeliveryStatus NVARCHAR(50)
-);
-```
-
----
-
-### 6. `BluetoothDevices`
-Stores IoT device metadata (printer or temperature sensor).
-
-```sql
-CREATE TABLE BluetoothDevices (
-    DeviceID INT PRIMARY KEY IDENTITY,
-    DeviceType NVARCHAR(50), -- 'TemperatureSensor', 'Printer'
-    DeviceSerialNumber NVARCHAR(100),
-    VehicleNumber NVARCHAR(20), -- Mounted truck ID
-    Status NVARCHAR(50) -- 'Active', 'Inactive'
-);
-```
-
----
-
-### 7. `TemperatureReadings`
-Stores real-time temperature data from the sensors every 10 seconds.
+### 7. **TemperatureReadings**
 
 ```sql
 CREATE TABLE TemperatureReadings (
-    ReadingID BIGINT PRIMARY KEY IDENTITY,
-    DeviceID INT FOREIGN KEY REFERENCES BluetoothDevices(DeviceID),
-    DeliveryID INT FOREIGN KEY REFERENCES Deliveries(DeliveryID),
-    RecordedTime DATETIME,
-    TemperatureCelsius DECIMAL(5,2),
-    IsOutOfRange BIT -- 1 if outside optimal range
+    ReadingID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    TruckID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Trucks(TruckID),
+    DeliveryID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Deliveries(DeliveryID),
+    RecordedAt DATETIME DEFAULT GETDATE(),
+    Temperature DECIMAL(5,2),
+    IsOutOfRange BIT -- 1 if above/below threshold
 );
 ```
 
 ---
 
-### 8. `TemperatureThresholds`
-Stores optimal and threshold temperature ranges.
+### 8. **TemperatureThresholds**
 
 ```sql
 CREATE TABLE TemperatureThresholds (
-    ThresholdID INT PRIMARY KEY IDENTITY,
-    MinTemp DECIMAL(5,2),
-    MaxTemp DECIMAL(5,2),
+    ThresholdID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    MinTemperature DECIMAL(5,2),
+    MaxTemperature DECIMAL(5,2),
     EffectiveFrom DATETIME,
-    EffectiveTo DATETIME NULL
+    EffectiveTo DATETIME
 );
 ```
 
 ---
 
-### 9. `Alerts`
-Stores any temperature alert records for analytics and notification.
+### 9. **Alerts**
 
 ```sql
 CREATE TABLE Alerts (
-    AlertID INT PRIMARY KEY IDENTITY,
-    ReadingID BIGINT FOREIGN KEY REFERENCES TemperatureReadings(ReadingID),
-    AlertTime DATETIME,
-    TemperatureCelsius DECIMAL(5,2),
-    AlertMessage NVARCHAR(255)
+    AlertID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    DeliveryID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Deliveries(DeliveryID),
+    ReadingID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES TemperatureReadings(ReadingID),
+    AlertTime DATETIME DEFAULT GETDATE(),
+    Message NVARCHAR(500),
+    Resolved BIT DEFAULT 0
 );
 ```
+Here is a **Mermaid Entity-Relationship Diagram (ERD)** representing the SQL schema for the IoT-enabled food delivery and temperature tracking solution:
+
+```mermaid
+erDiagram
+
+    Customers ||--o{ Orders : places
+    Orders ||--|{ OrderItems : contains
+    Orders ||--o| Deliveries : has
+    Drivers ||--o{ Deliveries : assigned_to
+    Trucks ||--o{ Deliveries : used_for
+    Deliveries ||--o{ TemperatureReadings : has
+    Trucks ||--o{ TemperatureReadings : reports_from
+    Deliveries ||--o{ Alerts : triggers
+    TemperatureReadings ||--|| Alerts : causes
+    TemperatureThresholds ||--o{ TemperatureReadings : governs
+
+    Customers {
+        uniqueidentifier CustomerID PK
+        nvarchar CustomerName
+        nvarchar BusinessType
+        nvarchar ContactName
+        nvarchar PhoneNumber
+        nvarchar Email
+        nvarchar Address
+        nvarchar City
+        nvarchar PostalCode
+        datetime CreatedDate
+    }
+
+    Orders {
+        uniqueidentifier OrderID PK
+        uniqueidentifier CustomerID FK
+        datetime OrderDate
+        datetime DeliveryDate
+        nvarchar OrderChannel
+        decimal TotalAmount
+        nvarchar OrderStatus
+    }
+
+    OrderItems {
+        uniqueidentifier OrderItemID PK
+        uniqueidentifier OrderID FK
+        nvarchar ItemName
+        int Quantity
+        decimal UnitPrice
+        bit TemperatureSensitive
+    }
+
+    Drivers {
+        uniqueidentifier DriverID PK
+        nvarchar DriverName
+        nvarchar MobileNumber
+        uniqueidentifier AssignedTruckID
+    }
+
+    Trucks {
+        uniqueidentifier TruckID PK
+        nvarchar LicensePlate
+        nvarchar BluetoothPrinterID
+        nvarchar TemperatureSensorID
+    }
+
+    Deliveries {
+        uniqueidentifier DeliveryID PK
+        uniqueidentifier OrderID FK
+        uniqueidentifier DriverID FK
+        uniqueidentifier TruckID FK
+        datetime StartTime
+        datetime EndTime
+        nvarchar DeliveryStatus
+    }
+
+    TemperatureReadings {
+        uniqueidentifier ReadingID PK
+        uniqueidentifier TruckID FK
+        uniqueidentifier DeliveryID FK
+        datetime RecordedAt
+        decimal Temperature
+        bit IsOutOfRange
+    }
+
+    TemperatureThresholds {
+        uniqueidentifier ThresholdID PK
+        decimal MinTemperature
+        decimal MaxTemperature
+        datetime EffectiveFrom
+        datetime EffectiveTo
+    }
+
+    Alerts {
+        uniqueidentifier AlertID PK
+        uniqueidentifier DeliveryID FK
+        uniqueidentifier ReadingID FK
+        datetime AlertTime
+        nvarchar Message
+        bit Resolved
+    }
+```
+
+This ERD gives a clear, high-level overview of:
+
+* Relationships between **orders, deliveries, trucks, and sensors**
+* **IoT integration via temperature readings and alerting**
+* **Traceability and analytics for temperature compliance**
+
+Would you like this exported into an image or editable tool like **draw\.io** or **dbdiagram.io**?
+
 
 ---
 
-## 📊 Relationships Summary
-- `Customers` → `Orders` → `OrderItems`
-- `Orders` → `Deliveries` → `TemperatureReadings`
-- `Drivers` assigned to `Deliveries`
-- `BluetoothDevices` mounted in trucks send `TemperatureReadings`
-- `TemperatureReadings` compared against `TemperatureThresholds`
-- Out-of-threshold readings generate `Alerts`
+## 📊 **Use Case Flow**
+
+1. **Order Placed** → Linked to a customer.
+2. **Order Assigned** → A driver, truck, and delivery entry are created.
+3. **During Delivery**:
+
+   * Temperature sensor records data every 10s.
+   * Each reading is checked against current threshold.
+   * If out of range → record as `IsOutOfRange = 1` and create an alert.
+4. **Post Delivery**:
+
+   * Analytics dashboards use `TemperatureReadings` to display delivery compliance and performance KPIs.
 
 ---
 
-Let me know if you want:
-- Sample data inserts
-- Power BI schema for visualizing sensor readings
-- Stored procedures for recording and alerting on sensor data
-- Real-time ingestion pipeline using Azure Functions or IoT Hub
+Would you like a **Power BI sample report structure** or a **Mermaid entity-relationship diagram** for this schema?
 
 ---
 
