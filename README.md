@@ -281,8 +281,231 @@ This ERD gives a clear, high-level overview of:
 * Relationships between **orders, deliveries, trucks, and sensors**
 * **IoT integration via temperature readings and alerting**
 * **Traceability and analytics for temperature compliance**
+Below are **SQL Server stored procedures** for **CRUD operations** (Create, Read, Update, Delete) for the core tables in your IoT-enabled delivery system using `uniqueidentifier` as primary keys.
 
-Would you like this exported into an image or editable tool like **draw\.io** or **dbdiagram.io**?
+To keep this manageable, I’ll include full CRUD for three key entities: `Customers`, `Orders`, and `TemperatureReadings`. Let me know if you want CRUD procedures for all tables.
+
+---
+
+### 🧾 1. **CRUD for `Customers`**
+
+#### ✅ Create Customer
+
+```sql
+CREATE PROCEDURE CreateCustomer
+    @CustomerName NVARCHAR(255),
+    @BusinessType NVARCHAR(100),
+    @ContactName NVARCHAR(255),
+    @PhoneNumber NVARCHAR(50),
+    @Email NVARCHAR(255),
+    @Address NVARCHAR(255),
+    @City NVARCHAR(100),
+    @PostalCode NVARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Customers (CustomerID, CustomerName, BusinessType, ContactName, PhoneNumber, Email, Address, City, PostalCode, CreatedDate)
+    VALUES (NEWID(), @CustomerName, @BusinessType, @ContactName, @PhoneNumber, @Email, @Address, @City, @PostalCode, GETDATE());
+END
+```
+
+#### 📄 Read Customer
+
+```sql
+CREATE PROCEDURE GetCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT * FROM Customers WHERE CustomerID = @CustomerID;
+END
+```
+
+#### 📝 Update Customer
+
+```sql
+CREATE PROCEDURE UpdateCustomer
+    @CustomerID UNIQUEIDENTIFIER,
+    @CustomerName NVARCHAR(255),
+    @BusinessType NVARCHAR(100),
+    @ContactName NVARCHAR(255),
+    @PhoneNumber NVARCHAR(50),
+    @Email NVARCHAR(255),
+    @Address NVARCHAR(255),
+    @City NVARCHAR(100),
+    @PostalCode NVARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Customers
+    SET 
+        CustomerName = @CustomerName,
+        BusinessType = @BusinessType,
+        ContactName = @ContactName,
+        PhoneNumber = @PhoneNumber,
+        Email = @Email,
+        Address = @Address,
+        City = @City,
+        PostalCode = @PostalCode
+    WHERE CustomerID = @CustomerID;
+END
+```
+
+#### ❌ Delete Customer
+
+```sql
+CREATE PROCEDURE DeleteCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM Customers WHERE CustomerID = @CustomerID;
+END
+```
+
+---
+
+### 📦 2. **CRUD for `Orders`**
+
+#### ✅ Create Order
+
+```sql
+CREATE PROCEDURE CreateOrder
+    @CustomerID UNIQUEIDENTIFIER,
+    @DeliveryDate DATETIME,
+    @OrderChannel NVARCHAR(50),
+    @TotalAmount DECIMAL(10,2),
+    @OrderStatus NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Orders (OrderID, CustomerID, OrderDate, DeliveryDate, OrderChannel, TotalAmount, OrderStatus)
+    VALUES (NEWID(), @CustomerID, GETDATE(), @DeliveryDate, @OrderChannel, @TotalAmount, @OrderStatus);
+END
+```
+
+#### 📄 Read Order
+
+```sql
+CREATE PROCEDURE GetOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT * FROM Orders WHERE OrderID = @OrderID;
+END
+```
+
+#### 📝 Update Order
+
+```sql
+CREATE PROCEDURE UpdateOrder
+    @OrderID UNIQUEIDENTIFIER,
+    @DeliveryDate DATETIME,
+    @OrderChannel NVARCHAR(50),
+    @TotalAmount DECIMAL(10,2),
+    @OrderStatus NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Orders
+    SET 
+        DeliveryDate = @DeliveryDate,
+        OrderChannel = @OrderChannel,
+        TotalAmount = @TotalAmount,
+        OrderStatus = @OrderStatus
+    WHERE OrderID = @OrderID;
+END
+```
+
+#### ❌ Delete Order
+
+```sql
+CREATE PROCEDURE DeleteOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM Orders WHERE OrderID = @OrderID;
+END
+```
+
+---
+
+### 🌡️ 3. **CRUD for `TemperatureReadings`**
+
+#### ✅ Create Temperature Reading
+
+```sql
+CREATE PROCEDURE CreateTemperatureReading
+    @TruckID UNIQUEIDENTIFIER,
+    @DeliveryID UNIQUEIDENTIFIER,
+    @Temperature DECIMAL(5,2),
+    @IsOutOfRange BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO TemperatureReadings (ReadingID, TruckID, DeliveryID, RecordedAt, Temperature, IsOutOfRange)
+    VALUES (NEWID(), @TruckID, @DeliveryID, GETDATE(), @Temperature, @IsOutOfRange);
+END
+```
+
+#### 📄 Read Temperature Reading
+
+```sql
+CREATE PROCEDURE GetTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT * FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
+```
+
+#### 📝 Update Temperature Reading
+
+```sql
+CREATE PROCEDURE UpdateTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER,
+    @Temperature DECIMAL(5,2),
+    @IsOutOfRange BIT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE TemperatureReadings
+    SET 
+        Temperature = @Temperature,
+        IsOutOfRange = @IsOutOfRange
+    WHERE ReadingID = @ReadingID;
+END
+```
+
+#### ❌ Delete Temperature Reading
+
+```sql
+CREATE PROCEDURE DeleteTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
+```
+
+---
+
 
 
 ---
@@ -302,9 +525,6 @@ Would you like this exported into an image or editable tool like **draw\.io** or
 
 ---
 
-Would you like a **Power BI sample report structure** or a **Mermaid entity-relationship diagram** for this schema?
-
----
 
 
 Set Up Steps 
@@ -581,8 +801,6 @@ In **Power BI**, you can use the above schema to create visual dashboards:
 
 ---
 
-Would you like help with the Power BI data model or a sample .pbix structure?
-
 ## 📦 Database Tables (Updated with Azure Metadata)
 
 ### 1. `TemperatureReadings` – Updated for Azure Ingestion
@@ -658,9 +876,4 @@ Power BI connects to:
 
 ---
 
-Would you like:
-- Sample JSON payload for Service Bus message?
-- Azure Function code to process messages and insert into SQL?
-- Bicep/Terraform deployment template for the resources?
 
-Let me know! I can also generate a full animated diagram or deployment flow if that helps.
