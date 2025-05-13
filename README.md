@@ -505,6 +505,26 @@ END
 ```
 
 ---
+✅ All stored procedures for **CRUD operations** across every table in your IoT-enabled food delivery system have been generated.
+
+📄 [Download the complete SQL script here: `CRUD_StoredProcedures.sql`](sandbox:/mnt/data/CRUD_StoredProcedures.sql)
+
+This file includes stored procedures for:
+
+* `Customers`
+* `Orders`
+* `OrderItems`
+* `Drivers`
+* `Trucks`
+* `Deliveries`
+* `TemperatureReadings`
+* `TemperatureThresholds`
+* `Alerts`
+
+Would you like me to include:
+
+* **Unit tests for each stored procedure?**
+* Or wrap them in a transaction + error handling format (TRY/CATCH)?
 
 
 
