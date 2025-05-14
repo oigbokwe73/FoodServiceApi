@@ -297,11 +297,14 @@ This document includes stored procedure definitions for managing core tables in 
 
 ---
 
-## ✅ 1. CREATE Procedures
+Here are the complete **SQL Server stored procedures** for **Create, Read, Update, and Delete (CRUD)** operations for **all tables** involved in the IoT-enabled food delivery and temperature monitoring system.
 
-### 🔹 Customers
+---
+
+## 🔹 1. `Customers`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateCustomer
     @CustomerName NVARCHAR(255),
     @BusinessType NVARCHAR(100),
@@ -316,11 +319,49 @@ BEGIN
     INSERT INTO Customers (CustomerID, CustomerName, BusinessType, ContactName, PhoneNumber, Email, Address, City, PostalCode, CreatedDate)
     VALUES (NEWID(), @CustomerName, @BusinessType, @ContactName, @PhoneNumber, @Email, @Address, @City, @PostalCode, GETDATE());
 END
+
+-- Read
+CREATE PROCEDURE GetCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Customers WHERE CustomerID = @CustomerID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateCustomer
+    @CustomerID UNIQUEIDENTIFIER,
+    @CustomerName NVARCHAR(255),
+    @BusinessType NVARCHAR(100),
+    @ContactName NVARCHAR(255),
+    @PhoneNumber NVARCHAR(50),
+    @Email NVARCHAR(255),
+    @Address NVARCHAR(255),
+    @City NVARCHAR(100),
+    @PostalCode NVARCHAR(20)
+AS
+BEGIN
+    UPDATE Customers
+    SET CustomerName = @CustomerName, BusinessType = @BusinessType, ContactName = @ContactName,
+        PhoneNumber = @PhoneNumber, Email = @Email, Address = @Address, City = @City, PostalCode = @PostalCode
+    WHERE CustomerID = @CustomerID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Customers WHERE CustomerID = @CustomerID;
+END
 ```
 
-### 🔹 Orders
+---
+
+## 🔹 2. `Orders`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateOrder
     @CustomerID UNIQUEIDENTIFIER,
     @DeliveryDate DATETIME,
@@ -332,11 +373,44 @@ BEGIN
     INSERT INTO Orders (OrderID, CustomerID, OrderDate, DeliveryDate, OrderChannel, TotalAmount, OrderStatus)
     VALUES (NEWID(), @CustomerID, GETDATE(), @DeliveryDate, @OrderChannel, @TotalAmount, @OrderStatus);
 END
+
+-- Read
+CREATE PROCEDURE GetOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Orders WHERE OrderID = @OrderID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateOrder
+    @OrderID UNIQUEIDENTIFIER,
+    @DeliveryDate DATETIME,
+    @OrderChannel NVARCHAR(50),
+    @TotalAmount DECIMAL(10,2),
+    @OrderStatus NVARCHAR(50)
+AS
+BEGIN
+    UPDATE Orders
+    SET DeliveryDate = @DeliveryDate, OrderChannel = @OrderChannel, TotalAmount = @TotalAmount, OrderStatus = @OrderStatus
+    WHERE OrderID = @OrderID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Orders WHERE OrderID = @OrderID;
+END
 ```
 
-### 🔹 OrderItems
+---
+
+## 🔹 3. `OrderItems`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateOrderItem
     @OrderID UNIQUEIDENTIFIER,
     @ItemName NVARCHAR(255),
@@ -348,11 +422,44 @@ BEGIN
     INSERT INTO OrderItems (OrderItemID, OrderID, ItemName, Quantity, UnitPrice, TemperatureSensitive)
     VALUES (NEWID(), @OrderID, @ItemName, @Quantity, @UnitPrice, @TemperatureSensitive);
 END
+
+-- Read
+CREATE PROCEDURE GetOrderItem
+    @OrderItemID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM OrderItems WHERE OrderItemID = @OrderItemID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateOrderItem
+    @OrderItemID UNIQUEIDENTIFIER,
+    @ItemName NVARCHAR(255),
+    @Quantity INT,
+    @UnitPrice DECIMAL(10,2),
+    @TemperatureSensitive BIT
+AS
+BEGIN
+    UPDATE OrderItems
+    SET ItemName = @ItemName, Quantity = @Quantity, UnitPrice = @UnitPrice, TemperatureSensitive = @TemperatureSensitive
+    WHERE OrderItemID = @OrderItemID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteOrderItem
+    @OrderItemID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM OrderItems WHERE OrderItemID = @OrderItemID;
+END
 ```
 
-### 🔹 Drivers
+---
+
+## 🔹 4. `Drivers`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateDriver
     @DriverName NVARCHAR(255),
     @MobileNumber NVARCHAR(50),
@@ -362,11 +469,43 @@ BEGIN
     INSERT INTO Drivers (DriverID, DriverName, MobileNumber, AssignedTruckID)
     VALUES (NEWID(), @DriverName, @MobileNumber, @AssignedTruckID);
 END
+
+-- Read
+CREATE PROCEDURE GetDriver
+    @DriverID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Drivers WHERE DriverID = @DriverID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateDriver
+    @DriverID UNIQUEIDENTIFIER,
+    @DriverName NVARCHAR(255),
+    @MobileNumber NVARCHAR(50),
+    @AssignedTruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE Drivers
+    SET DriverName = @DriverName, MobileNumber = @MobileNumber, AssignedTruckID = @AssignedTruckID
+    WHERE DriverID = @DriverID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteDriver
+    @DriverID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Drivers WHERE DriverID = @DriverID;
+END
 ```
 
-### 🔹 Trucks
+---
+
+## 🔹 5. `Trucks`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateTruck
     @LicensePlate NVARCHAR(20),
     @BluetoothPrinterID NVARCHAR(100),
@@ -376,11 +515,43 @@ BEGIN
     INSERT INTO Trucks (TruckID, LicensePlate, BluetoothPrinterID, TemperatureSensorID)
     VALUES (NEWID(), @LicensePlate, @BluetoothPrinterID, @TemperatureSensorID);
 END
+
+-- Read
+CREATE PROCEDURE GetTruck
+    @TruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Trucks WHERE TruckID = @TruckID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTruck
+    @TruckID UNIQUEIDENTIFIER,
+    @LicensePlate NVARCHAR(20),
+    @BluetoothPrinterID NVARCHAR(100),
+    @TemperatureSensorID NVARCHAR(100)
+AS
+BEGIN
+    UPDATE Trucks
+    SET LicensePlate = @LicensePlate, BluetoothPrinterID = @BluetoothPrinterID, TemperatureSensorID = @TemperatureSensorID
+    WHERE TruckID = @TruckID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTruck
+    @TruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Trucks WHERE TruckID = @TruckID;
+END
 ```
 
-### 🔹 Deliveries
+---
+
+## 🔹 6. `Deliveries`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateDelivery
     @OrderID UNIQUEIDENTIFIER,
     @DriverID UNIQUEIDENTIFIER,
@@ -393,11 +564,49 @@ BEGIN
     INSERT INTO Deliveries (DeliveryID, OrderID, DriverID, TruckID, StartTime, EndTime, DeliveryStatus)
     VALUES (NEWID(), @OrderID, @DriverID, @TruckID, @StartTime, @EndTime, @DeliveryStatus);
 END
+
+-- Read
+CREATE PROCEDURE GetDelivery
+    @DeliveryID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Deliveries WHERE DeliveryID = @DeliveryID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateDelivery
+    @DeliveryID UNIQUEIDENTIFIER,
+    @DriverID UNIQUEIDENTIFIER,
+    @TruckID UNIQUEIDENTIFIER,
+    @StartTime DATETIME,
+    @EndTime DATETIME,
+    @DeliveryStatus NVARCHAR(50)
+AS
+BEGIN
+    UPDATE Deliveries
+    SET DriverID = @DriverID,
+        TruckID = @TruckID,
+        StartTime = @StartTime,
+        EndTime = @EndTime,
+        DeliveryStatus = @DeliveryStatus
+    WHERE DeliveryID = @DeliveryID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteDelivery
+    @DeliveryID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Deliveries WHERE DeliveryID = @DeliveryID;
+END
 ```
 
-### 🔹 TemperatureReadings
+---
+
+## 🔹 7. `TemperatureReadings`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateTemperatureReading
     @TruckID UNIQUEIDENTIFIER,
     @DeliveryID UNIQUEIDENTIFIER,
@@ -408,11 +617,43 @@ BEGIN
     INSERT INTO TemperatureReadings (ReadingID, TruckID, DeliveryID, RecordedAt, Temperature, IsOutOfRange)
     VALUES (NEWID(), @TruckID, @DeliveryID, GETDATE(), @Temperature, @IsOutOfRange);
 END
+
+-- Read
+CREATE PROCEDURE GetTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER,
+    @Temperature DECIMAL(5,2),
+    @IsOutOfRange BIT
+AS
+BEGIN
+    UPDATE TemperatureReadings
+    SET Temperature = @Temperature,
+        IsOutOfRange = @IsOutOfRange
+    WHERE ReadingID = @ReadingID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
 ```
 
-### 🔹 TemperatureThresholds
+---
+
+## 🔹 8. `TemperatureThresholds`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateTemperatureThreshold
     @MinTemperature DECIMAL(5,2),
     @MaxTemperature DECIMAL(5,2),
@@ -423,11 +664,47 @@ BEGIN
     INSERT INTO TemperatureThresholds (ThresholdID, MinTemperature, MaxTemperature, EffectiveFrom, EffectiveTo)
     VALUES (NEWID(), @MinTemperature, @MaxTemperature, @EffectiveFrom, @EffectiveTo);
 END
+
+-- Read
+CREATE PROCEDURE GetTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER,
+    @MinTemperature DECIMAL(5,2),
+    @MaxTemperature DECIMAL(5,2),
+    @EffectiveFrom DATETIME,
+    @EffectiveTo DATETIME
+AS
+BEGIN
+    UPDATE TemperatureThresholds
+    SET MinTemperature = @MinTemperature,
+        MaxTemperature = @MaxTemperature,
+        EffectiveFrom = @EffectiveFrom,
+        EffectiveTo = @EffectiveTo
+    WHERE ThresholdID = @ThresholdID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID;
+END
 ```
 
-### 🔹 Alerts
+---
+
+## 🔹 9. `Alerts`
 
 ```sql
+-- Create
 CREATE PROCEDURE CreateAlert
     @DeliveryID UNIQUEIDENTIFIER,
     @ReadingID UNIQUEIDENTIFIER,
@@ -438,86 +715,47 @@ BEGIN
     INSERT INTO Alerts (AlertID, DeliveryID, ReadingID, AlertTime, Message, Resolved)
     VALUES (NEWID(), @DeliveryID, @ReadingID, GETDATE(), @Message, @Resolved);
 END
-```
 
----
+-- Read
+CREATE PROCEDURE GetAlert
+    @AlertID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Alerts WHERE AlertID = @AlertID;
+END
 
-## 📄 2. READ Procedures
+-- Update
+CREATE PROCEDURE UpdateAlert
+    @AlertID UNIQUEIDENTIFIER,
+    @Message NVARCHAR(500),
+    @Resolved BIT
+AS
+BEGIN
+    UPDATE Alerts
+    SET Message = @Message,
+        Resolved = @Resolved
+    WHERE AlertID = @AlertID;
+END
 
-Each table includes a read procedure by `ID`:
-
-```sql
-CREATE PROCEDURE GetCustomer @CustomerID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Customers WHERE CustomerID = @CustomerID; END
-CREATE PROCEDURE GetOrder @OrderID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Orders WHERE OrderID = @OrderID; END
-CREATE PROCEDURE GetOrderItem @OrderItemID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM OrderItems WHERE OrderItemID = @OrderItemID; END
-CREATE PROCEDURE GetDriver @DriverID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Drivers WHERE DriverID = @DriverID; END
-CREATE PROCEDURE GetTruck @TruckID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Trucks WHERE TruckID = @TruckID; END
-CREATE PROCEDURE GetDelivery @DeliveryID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Deliveries WHERE DeliveryID = @DeliveryID; END
-CREATE PROCEDURE GetTemperatureReading @ReadingID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM TemperatureReadings WHERE ReadingID = @ReadingID; END
-CREATE PROCEDURE GetTemperatureThreshold @ThresholdID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID; END
-CREATE PROCEDURE GetAlert @AlertID UNIQUEIDENTIFIER AS BEGIN SELECT * FROM Alerts WHERE AlertID = @AlertID; END
-```
-
----
-
-## 📝 3. UPDATE Procedures
-
-Each table includes an update procedure:
-
-```sql
--- Example: UpdateCustomer
-CREATE PROCEDURE UpdateCustomer
-    @CustomerID UNIQUEIDENTIFIER,
-    @CustomerName NVARCHAR(255),
-    @BusinessType NVARCHAR(100),
-    @ContactName NVARCHAR(255),
-    @PhoneNumber NVARCHAR(50),
-    @Email NVARCHAR(255),
-    @Address NVARCHAR(255),
-    @City NVARCHAR(100),
-    @PostalCode NVARCHAR(20)
-AS BEGIN
-    UPDATE Customers
-    SET CustomerName = @CustomerName, BusinessType = @BusinessType,
-        ContactName = @ContactName, PhoneNumber = @PhoneNumber,
-        Email = @Email, Address = @Address,
-        City = @City, PostalCode = @PostalCode
-    WHERE CustomerID = @CustomerID;
+-- Delete
+CREATE PROCEDURE DeleteAlert
+    @AlertID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Alerts WHERE AlertID = @AlertID;
 END
 ```
 
-Repeat similar logic for:
-
-* `UpdateOrder`
-* `UpdateOrderItem`
-* `UpdateDriver`
-* `UpdateTruck`
-* `UpdateDelivery`
-* `UpdateTemperatureReading`
-* `UpdateTemperatureThreshold`
-* `UpdateAlert`
-
 ---
 
-## ❌ 4. DELETE Procedures
+✅ These procedures give you **full transactional control** over all entities involved in the food delivery tracking and IoT monitoring system.
 
-Each table includes a delete procedure:
+Would you like:
 
-```sql
-CREATE PROCEDURE DeleteCustomer @CustomerID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Customers WHERE CustomerID = @CustomerID; END
-CREATE PROCEDURE DeleteOrder @OrderID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Orders WHERE OrderID = @OrderID; END
-CREATE PROCEDURE DeleteOrderItem @OrderItemID UNIQUEIDENTIFIER AS BEGIN DELETE FROM OrderItems WHERE OrderItemID = @OrderItemID; END
-CREATE PROCEDURE DeleteDriver @DriverID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Drivers WHERE DriverID = @DriverID; END
-CREATE PROCEDURE DeleteTruck @TruckID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Trucks WHERE TruckID = @TruckID; END
-CREATE PROCEDURE DeleteDelivery @DeliveryID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Deliveries WHERE DeliveryID = @DeliveryID; END
-CREATE PROCEDURE DeleteTemperatureReading @ReadingID UNIQUEIDENTIFIER AS BEGIN DELETE FROM TemperatureReadings WHERE ReadingID = @ReadingID; END
-CREATE PROCEDURE DeleteTemperatureThreshold @ThresholdID UNIQUEIDENTIFIER AS BEGIN DELETE FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID; END
-CREATE PROCEDURE DeleteAlert @AlertID UNIQUEIDENTIFIER AS BEGIN DELETE FROM Alerts WHERE AlertID = @AlertID; END
-```
+* All scripts bundled in a `.sql` file for download?
+* Sample execution scripts for testing these procedures?
+* Triggers to auto-generate alerts when temperature exceeds thresholds?
 
----
-
-Would you like this README exported as a `.md` file or split into `.sql` files per procedure type (Create.sql, Read.sql, etc.)?
 
 ---
 
