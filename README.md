@@ -32,337 +32,889 @@ graph TD
 
 
 
-### 🛠️ SQL Database Tables (with explanation)
+Based on your scenario, here’s a detailed breakdown of the **SQL database schema** using `uniqueidentifier` as primary keys, to support **real-time IoT temperature monitoring**, **delivery tracking**, and **customer satisfaction assurance** for a food delivery operation. This schema allows integration of IoT data, delivery management, and analytics.
 
-#### 1. **Customers**
+---
+
+## 🧠 **Scenario Summary**
+
+The client is the UK's leading food service delivery provider with over 30,000 B2B customers. Orders come via a website or call center. To ensure food quality during deliveries, trucks are equipped with Bluetooth printers and temperature sensors. Real-time temperature readings every 10 seconds are logged to prevent spoilage. If temperatures exceed thresholds, alerts are raised, reducing the chance of rejected goods.
+
+---
+
+## 🗂️ **SQL Database Tables with `uniqueidentifier`**
+
+### 1. **Customers**
+
 ```sql
 CREATE TABLE Customers (
-    CustomerID INT PRIMARY KEY,
-    CustomerName VARCHAR(255),
-    Address TEXT,
-    ContactNumber VARCHAR(20),
-    Email VARCHAR(100),
-    BusinessType VARCHAR(100) -- e.g., restaurant, cafe, etc.
+    CustomerID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    CustomerName NVARCHAR(255),
+    BusinessType NVARCHAR(100), -- e.g., Restaurant, Café, Retailer
+    ContactName NVARCHAR(255),
+    PhoneNumber NVARCHAR(50),
+    Email NVARCHAR(255),
+    Address NVARCHAR(255),
+    City NVARCHAR(100),
+    PostalCode NVARCHAR(20),
+    CreatedDate DATETIME DEFAULT GETDATE()
 );
 ```
 
-#### 2. **Orders**
+---
+
+### 2. **Orders**
+
 ```sql
 CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY,
-    CustomerID INT,
-    OrderDate DATETIME,
-    OrderChannel VARCHAR(50), -- Website or Call Center
+    OrderID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    CustomerID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Customers(CustomerID),
+    OrderDate DATETIME DEFAULT GETDATE(),
     DeliveryDate DATETIME,
-    Status VARCHAR(50), -- e.g., Scheduled, In-Transit, Delivered, Returned
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+    OrderChannel NVARCHAR(50), -- Website, Call Center
+    TotalAmount DECIMAL(10,2),
+    OrderStatus NVARCHAR(50) -- e.g., Pending, Dispatched, Delivered, Returned
 );
 ```
 
-#### 3. **OrderItems**
+---
+
+### 3. **OrderItems**
+
 ```sql
 CREATE TABLE OrderItems (
-    OrderItemID INT PRIMARY KEY,
-    OrderID INT,
-    ItemName VARCHAR(255),
+    OrderItemID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OrderID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Orders(OrderID),
+    ItemName NVARCHAR(255),
     Quantity INT,
     UnitPrice DECIMAL(10,2),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+    TemperatureSensitive BIT -- Indicates if temperature monitoring is needed
 );
 ```
 
-#### 4. **Drivers**
+---
+
+### 4. **Drivers**
+
 ```sql
 CREATE TABLE Drivers (
-    DriverID INT PRIMARY KEY,
-    DriverName VARCHAR(100),
-    MobileNumber VARCHAR(20),
-    AssignedTruckID INT
+    DriverID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    DriverName NVARCHAR(255),
+    MobileNumber NVARCHAR(50),
+    AssignedTruckID UNIQUEIDENTIFIER
 );
 ```
 
-#### 5. **Trucks**
+---
+
+### 5. **Trucks**
+
 ```sql
 CREATE TABLE Trucks (
-    TruckID INT PRIMARY KEY,
-    TruckNumber VARCHAR(50),
-    TruckModel VARCHAR(100),
-    MaxCapacityKG DECIMAL(10,2),
-    TemperatureThresholdMin DECIMAL(5,2),
-    TemperatureThresholdMax DECIMAL(5,2)
+    TruckID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    LicensePlate NVARCHAR(20),
+    BluetoothPrinterID NVARCHAR(100),
+    TemperatureSensorID NVARCHAR(100)
 );
 ```
 
-#### 6. **Deliveries**
+---
+
+### 6. **Deliveries**
+
 ```sql
 CREATE TABLE Deliveries (
-    DeliveryID INT PRIMARY KEY,
-    OrderID INT,
-    DriverID INT,
-    TruckID INT,
+    DeliveryID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OrderID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Orders(OrderID),
+    DriverID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Drivers(DriverID),
+    TruckID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Trucks(TruckID),
     StartTime DATETIME,
     EndTime DATETIME,
-    DeliveryStatus VARCHAR(50), -- e.g., On Route, Completed, Failed
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
-    FOREIGN KEY (DriverID) REFERENCES Drivers(DriverID),
-    FOREIGN KEY (TruckID) REFERENCES Trucks(TruckID)
-);
-```
-
-#### 7. **TemperatureReadings**
-```sql
-CREATE TABLE TemperatureReadings (
-    ReadingID BIGINT PRIMARY KEY,
-    DeliveryID INT,
-    ReadingTime DATETIME,
-    TemperatureValue DECIMAL(5,2), -- e.g., in Celsius
-    Status VARCHAR(20), -- e.g., Normal, Alert
-    FOREIGN KEY (DeliveryID) REFERENCES Deliveries(DeliveryID)
-);
-```
-
-#### 8. **TemperatureAlerts**
-```sql
-CREATE TABLE TemperatureAlerts (
-    AlertID INT PRIMARY KEY,
-    ReadingID BIGINT,
-    AlertTime DATETIME,
-    TemperatureValue DECIMAL(5,2),
-    AlertType VARCHAR(50), -- e.g., Above Threshold, Below Threshold
-    FOREIGN KEY (ReadingID) REFERENCES TemperatureReadings(ReadingID)
-);
-```
-
-#### 9. **Devices**
-```sql
-CREATE TABLE Devices (
-    DeviceID INT PRIMARY KEY,
-    DeviceType VARCHAR(50), -- e.g., TemperatureSensor, BluetoothPrinter
-    SerialNumber VARCHAR(100),
-    AssignedTruckID INT,
-    Status VARCHAR(50), -- Active, Inactive, Maintenance
-    FOREIGN KEY (AssignedTruckID) REFERENCES Trucks(TruckID)
+    DeliveryStatus NVARCHAR(50) -- In-Transit, Completed, Failed
 );
 ```
 
 ---
 
-### 📊 Use Cases Supported
-
-| Use Case | Tables Involved |
-|----------|-----------------|
-| Customer places an order | Customers, Orders, OrderItems |
-| Assign driver and truck for delivery | Deliveries, Drivers, Trucks |
-| Attach IoT device to truck | Devices |
-| Record temperature every 10s | TemperatureReadings |
-| Alert on temperature violation | TemperatureAlerts |
-| Analytics and reporting | TemperatureReadings, Deliveries, Orders |
-
----
-
-### 📈 Example Queries for Analytics
-
-**1. Find deliveries with temperature alerts:**
-```sql
-SELECT d.DeliveryID, o.OrderID, c.CustomerName, tr.TemperatureValue, tr.ReadingTime
-FROM TemperatureAlerts ta
-JOIN TemperatureReadings tr ON ta.ReadingID = tr.ReadingID
-JOIN Deliveries d ON tr.DeliveryID = d.DeliveryID
-JOIN Orders o ON d.OrderID = o.OrderID
-JOIN Customers c ON o.CustomerID = c.CustomerID;
-```
-
-**2. Average delivery temperature per truck:**
-```sql
-SELECT t.TruckNumber, AVG(tr.TemperatureValue) AS AvgTemp
-FROM TemperatureReadings tr
-JOIN Deliveries d ON tr.DeliveryID = d.DeliveryID
-JOIN Trucks t ON d.TruckID = t.TruckID
-GROUP BY t.TruckNumber;
-```
-
-**3. Orders with sustained temperature issues (>3 consecutive readings out of range):**
-```sql
-SELECT DeliveryID, COUNT(*) AS AlertCount
-FROM TemperatureReadings
-WHERE Status = 'Alert'
-GROUP BY DeliveryID
-HAVING COUNT(*) >= 3;
-```
-
----
-
-
-Based on the solution you described, we'll need to design a relational SQL database that supports the client's logistics, order, delivery, and IoT monitoring capabilities. Here's a breakdown of the SQL database tables required to meet the needs of:
-
-1. **Customers placing orders via web or call center**  
-2. **Drivers delivering goods using IoT-connected devices**  
-3. **Bluetooth temperature sensors sending real-time readings every 10 seconds**  
-4. **Analytics and monitoring to identify deliveries with abnormal temperatures**
-
----
-
-## ✅ Database Tables (with relationships)
-
-### 1. `Customers`
-Stores information about each customer.
-
-```sql
-CREATE TABLE Customers (
-    CustomerID INT PRIMARY KEY IDENTITY,
-    Name NVARCHAR(100),
-    BusinessType NVARCHAR(50),
-    Address NVARCHAR(255),
-    City NVARCHAR(50),
-    PostalCode NVARCHAR(20),
-    PhoneNumber NVARCHAR(20),
-    Email NVARCHAR(100)
-);
-```
-
----
-
-### 2. `Orders`
-Tracks individual orders placed by customers.
-
-```sql
-CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY IDENTITY,
-    CustomerID INT FOREIGN KEY REFERENCES Customers(CustomerID),
-    OrderDate DATETIME,
-    OrderChannel NVARCHAR(20), -- 'Web' or 'Call Center'
-    TotalAmount DECIMAL(10,2),
-    DeliveryStatus NVARCHAR(50),
-    ScheduledDeliveryTime DATETIME
-);
-```
-
----
-
-### 3. `OrderItems`
-Stores items associated with each order.
-
-```sql
-CREATE TABLE OrderItems (
-    OrderItemID INT PRIMARY KEY IDENTITY,
-    OrderID INT FOREIGN KEY REFERENCES Orders(OrderID),
-    ItemName NVARCHAR(100),
-    Quantity INT,
-    Unit NVARCHAR(10), -- e.g., 'kg', 'ltr'
-    PricePerUnit DECIMAL(10,2)
-);
-```
-
----
-
-### 4. `Drivers`
-Stores driver information who deliver the orders.
-
-```sql
-CREATE TABLE Drivers (
-    DriverID INT PRIMARY KEY IDENTITY,
-    Name NVARCHAR(100),
-    PhoneNumber NVARCHAR(20),
-    VehicleNumber NVARCHAR(20)
-);
-```
-
----
-
-### 5. `Deliveries`
-Represents each delivery attempt or session.
-
-```sql
-CREATE TABLE Deliveries (
-    DeliveryID INT PRIMARY KEY IDENTITY,
-    OrderID INT FOREIGN KEY REFERENCES Orders(OrderID),
-    DriverID INT FOREIGN KEY REFERENCES Drivers(DriverID),
-    DeliveryStartTime DATETIME,
-    DeliveryEndTime DATETIME,
-    DeliveryStatus NVARCHAR(50)
-);
-```
-
----
-
-### 6. `BluetoothDevices`
-Stores IoT device metadata (printer or temperature sensor).
-
-```sql
-CREATE TABLE BluetoothDevices (
-    DeviceID INT PRIMARY KEY IDENTITY,
-    DeviceType NVARCHAR(50), -- 'TemperatureSensor', 'Printer'
-    DeviceSerialNumber NVARCHAR(100),
-    VehicleNumber NVARCHAR(20), -- Mounted truck ID
-    Status NVARCHAR(50) -- 'Active', 'Inactive'
-);
-```
-
----
-
-### 7. `TemperatureReadings`
-Stores real-time temperature data from the sensors every 10 seconds.
+### 7. **TemperatureReadings**
 
 ```sql
 CREATE TABLE TemperatureReadings (
-    ReadingID BIGINT PRIMARY KEY IDENTITY,
-    DeviceID INT FOREIGN KEY REFERENCES BluetoothDevices(DeviceID),
-    DeliveryID INT FOREIGN KEY REFERENCES Deliveries(DeliveryID),
-    RecordedTime DATETIME,
-    TemperatureCelsius DECIMAL(5,2),
-    IsOutOfRange BIT -- 1 if outside optimal range
+    ReadingID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    TruckID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Trucks(TruckID),
+    DeliveryID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Deliveries(DeliveryID),
+    RecordedAt DATETIME DEFAULT GETDATE(),
+    Temperature DECIMAL(5,2),
+    IsOutOfRange BIT -- 1 if above/below threshold
 );
 ```
 
 ---
 
-### 8. `TemperatureThresholds`
-Stores optimal and threshold temperature ranges.
+### 8. **TemperatureThresholds**
 
 ```sql
 CREATE TABLE TemperatureThresholds (
-    ThresholdID INT PRIMARY KEY IDENTITY,
-    MinTemp DECIMAL(5,2),
-    MaxTemp DECIMAL(5,2),
+    ThresholdID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    MinTemperature DECIMAL(5,2),
+    MaxTemperature DECIMAL(5,2),
     EffectiveFrom DATETIME,
-    EffectiveTo DATETIME NULL
+    EffectiveTo DATETIME
 );
 ```
 
 ---
 
-### 9. `Alerts`
-Stores any temperature alert records for analytics and notification.
+### 9. **Alerts**
 
 ```sql
 CREATE TABLE Alerts (
-    AlertID INT PRIMARY KEY IDENTITY,
-    ReadingID BIGINT FOREIGN KEY REFERENCES TemperatureReadings(ReadingID),
-    AlertTime DATETIME,
-    TemperatureCelsius DECIMAL(5,2),
-    AlertMessage NVARCHAR(255)
+    AlertID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    DeliveryID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Deliveries(DeliveryID),
+    ReadingID UNIQUEIDENTIFIER FOREIGN KEY REFERENCES TemperatureReadings(ReadingID),
+    AlertTime DATETIME DEFAULT GETDATE(),
+    Message NVARCHAR(500),
+    Resolved BIT DEFAULT 0
 );
+```
+Here is a **Mermaid Entity-Relationship Diagram (ERD)** representing the SQL schema for the IoT-enabled food delivery and temperature tracking solution:
+
+```mermaid
+erDiagram
+
+    Customers ||--o{ Orders : places
+    Orders ||--|{ OrderItems : contains
+    Orders ||--o| Deliveries : has
+    Drivers ||--o{ Deliveries : assigned_to
+    Trucks ||--o{ Deliveries : used_for
+    Deliveries ||--o{ TemperatureReadings : has
+    Trucks ||--o{ TemperatureReadings : reports_from
+    Deliveries ||--o{ Alerts : triggers
+    TemperatureReadings ||--|| Alerts : causes
+    TemperatureThresholds ||--o{ TemperatureReadings : governs
+
+    Customers {
+        uniqueidentifier CustomerID PK
+        nvarchar CustomerName
+        nvarchar BusinessType
+        nvarchar ContactName
+        nvarchar PhoneNumber
+        nvarchar Email
+        nvarchar Address
+        nvarchar City
+        nvarchar PostalCode
+        datetime CreatedDate
+    }
+
+    Orders {
+        uniqueidentifier OrderID PK
+        uniqueidentifier CustomerID FK
+        datetime OrderDate
+        datetime DeliveryDate
+        nvarchar OrderChannel
+        decimal TotalAmount
+        nvarchar OrderStatus
+    }
+
+    OrderItems {
+        uniqueidentifier OrderItemID PK
+        uniqueidentifier OrderID FK
+        nvarchar ItemName
+        int Quantity
+        decimal UnitPrice
+        bit TemperatureSensitive
+    }
+
+    Drivers {
+        uniqueidentifier DriverID PK
+        nvarchar DriverName
+        nvarchar MobileNumber
+        uniqueidentifier AssignedTruckID
+    }
+
+    Trucks {
+        uniqueidentifier TruckID PK
+        nvarchar LicensePlate
+        nvarchar BluetoothPrinterID
+        nvarchar TemperatureSensorID
+    }
+
+    Deliveries {
+        uniqueidentifier DeliveryID PK
+        uniqueidentifier OrderID FK
+        uniqueidentifier DriverID FK
+        uniqueidentifier TruckID FK
+        datetime StartTime
+        datetime EndTime
+        nvarchar DeliveryStatus
+    }
+
+    TemperatureReadings {
+        uniqueidentifier ReadingID PK
+        uniqueidentifier TruckID FK
+        uniqueidentifier DeliveryID FK
+        datetime RecordedAt
+        decimal Temperature
+        bit IsOutOfRange
+    }
+
+    TemperatureThresholds {
+        uniqueidentifier ThresholdID PK
+        decimal MinTemperature
+        decimal MaxTemperature
+        datetime EffectiveFrom
+        datetime EffectiveTo
+    }
+
+    Alerts {
+        uniqueidentifier AlertID PK
+        uniqueidentifier DeliveryID FK
+        uniqueidentifier ReadingID FK
+        datetime AlertTime
+        nvarchar Message
+        bit Resolved
+    }
+```
+
+This ERD gives a clear, high-level overview of:
+
+* Relationships between **orders, deliveries, trucks, and sensors**
+* **IoT integration via temperature readings and alerting**
+* **Traceability and analytics for temperature compliance**
+Below are **SQL Server stored procedures** for **CRUD operations** (Create, Read, Update, Delete) for the core tables in your IoT-enabled delivery system using `uniqueidentifier` as primary keys.
+
+To keep this manageable, I’ll include full CRUD for three key entities: `Customers`, `Orders`, and `TemperatureReadings`. Let me know if you want CRUD procedures for all tables.
+
+---
+
+Great! Below is the **README-style documentation**, with **separated sections** for `Create`, `Read`, `Update`, and `Delete` stored procedures, covering **all tables** in your IoT-enabled delivery tracking system.
+
+---
+
+# 📘 IoT Food Delivery – SQL Stored Procedure Reference
+
+This document includes stored procedure definitions for managing core tables in the **IoT-enabled food delivery system**, using `uniqueidentifier` as primary keys. Tables include `Customers`, `Orders`, `OrderItems`, `Drivers`, `Trucks`, `Deliveries`, `TemperatureReadings`, `TemperatureThresholds`, and `Alerts`.
+
+---
+
+Here are the complete **SQL Server stored procedures** for **Create, Read, Update, and Delete (CRUD)** operations for **all tables** involved in the IoT-enabled food delivery and temperature monitoring system.
+
+---
+
+## 🔹 1. `Customers`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateCustomer
+    @CustomerName NVARCHAR(255),
+    @BusinessType NVARCHAR(100),
+    @ContactName NVARCHAR(255),
+    @PhoneNumber NVARCHAR(50),
+    @Email NVARCHAR(255),
+    @Address NVARCHAR(255),
+    @City NVARCHAR(100),
+    @PostalCode NVARCHAR(20)
+AS
+BEGIN
+    INSERT INTO Customers (CustomerID, CustomerName, BusinessType, ContactName, PhoneNumber, Email, Address, City, PostalCode, CreatedDate)
+    VALUES (NEWID(), @CustomerName, @BusinessType, @ContactName, @PhoneNumber, @Email, @Address, @City, @PostalCode, GETDATE());
+END
+
+-- Read
+CREATE PROCEDURE GetCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Customers WHERE CustomerID = @CustomerID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateCustomer
+    @CustomerID UNIQUEIDENTIFIER,
+    @CustomerName NVARCHAR(255),
+    @BusinessType NVARCHAR(100),
+    @ContactName NVARCHAR(255),
+    @PhoneNumber NVARCHAR(50),
+    @Email NVARCHAR(255),
+    @Address NVARCHAR(255),
+    @City NVARCHAR(100),
+    @PostalCode NVARCHAR(20)
+AS
+BEGIN
+    UPDATE Customers
+    SET CustomerName = @CustomerName, BusinessType = @BusinessType, ContactName = @ContactName,
+        PhoneNumber = @PhoneNumber, Email = @Email, Address = @Address, City = @City, PostalCode = @PostalCode
+    WHERE CustomerID = @CustomerID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteCustomer
+    @CustomerID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Customers WHERE CustomerID = @CustomerID;
+END
 ```
 
 ---
 
-## 📊 Relationships Summary
-- `Customers` → `Orders` → `OrderItems`
-- `Orders` → `Deliveries` → `TemperatureReadings`
-- `Drivers` assigned to `Deliveries`
-- `BluetoothDevices` mounted in trucks send `TemperatureReadings`
-- `TemperatureReadings` compared against `TemperatureThresholds`
-- Out-of-threshold readings generate `Alerts`
+## 🔹 2. `Orders`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateOrder
+    @CustomerID UNIQUEIDENTIFIER,
+    @DeliveryDate DATETIME,
+    @OrderChannel NVARCHAR(50),
+    @TotalAmount DECIMAL(10,2),
+    @OrderStatus NVARCHAR(50)
+AS
+BEGIN
+    INSERT INTO Orders (OrderID, CustomerID, OrderDate, DeliveryDate, OrderChannel, TotalAmount, OrderStatus)
+    VALUES (NEWID(), @CustomerID, GETDATE(), @DeliveryDate, @OrderChannel, @TotalAmount, @OrderStatus);
+END
+
+-- Read
+CREATE PROCEDURE GetOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Orders WHERE OrderID = @OrderID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateOrder
+    @OrderID UNIQUEIDENTIFIER,
+    @DeliveryDate DATETIME,
+    @OrderChannel NVARCHAR(50),
+    @TotalAmount DECIMAL(10,2),
+    @OrderStatus NVARCHAR(50)
+AS
+BEGIN
+    UPDATE Orders
+    SET DeliveryDate = @DeliveryDate, OrderChannel = @OrderChannel, TotalAmount = @TotalAmount, OrderStatus = @OrderStatus
+    WHERE OrderID = @OrderID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteOrder
+    @OrderID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Orders WHERE OrderID = @OrderID;
+END
+```
 
 ---
 
-Let me know if you want:
-- Sample data inserts
-- Power BI schema for visualizing sensor readings
-- Stored procedures for recording and alerting on sensor data
-- Real-time ingestion pipeline using Azure Functions or IoT Hub
+## 🔹 3. `OrderItems`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateOrderItem
+    @OrderID UNIQUEIDENTIFIER,
+    @ItemName NVARCHAR(255),
+    @Quantity INT,
+    @UnitPrice DECIMAL(10,2),
+    @TemperatureSensitive BIT
+AS
+BEGIN
+    INSERT INTO OrderItems (OrderItemID, OrderID, ItemName, Quantity, UnitPrice, TemperatureSensitive)
+    VALUES (NEWID(), @OrderID, @ItemName, @Quantity, @UnitPrice, @TemperatureSensitive);
+END
+
+-- Read
+CREATE PROCEDURE GetOrderItem
+    @OrderItemID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM OrderItems WHERE OrderItemID = @OrderItemID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateOrderItem
+    @OrderItemID UNIQUEIDENTIFIER,
+    @ItemName NVARCHAR(255),
+    @Quantity INT,
+    @UnitPrice DECIMAL(10,2),
+    @TemperatureSensitive BIT
+AS
+BEGIN
+    UPDATE OrderItems
+    SET ItemName = @ItemName, Quantity = @Quantity, UnitPrice = @UnitPrice, TemperatureSensitive = @TemperatureSensitive
+    WHERE OrderItemID = @OrderItemID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteOrderItem
+    @OrderItemID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM OrderItems WHERE OrderItemID = @OrderItemID;
+END
+```
 
 ---
+
+## 🔹 4. `Drivers`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateDriver
+    @DriverName NVARCHAR(255),
+    @MobileNumber NVARCHAR(50),
+    @AssignedTruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    INSERT INTO Drivers (DriverID, DriverName, MobileNumber, AssignedTruckID)
+    VALUES (NEWID(), @DriverName, @MobileNumber, @AssignedTruckID);
+END
+
+-- Read
+CREATE PROCEDURE GetDriver
+    @DriverID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Drivers WHERE DriverID = @DriverID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateDriver
+    @DriverID UNIQUEIDENTIFIER,
+    @DriverName NVARCHAR(255),
+    @MobileNumber NVARCHAR(50),
+    @AssignedTruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    UPDATE Drivers
+    SET DriverName = @DriverName, MobileNumber = @MobileNumber, AssignedTruckID = @AssignedTruckID
+    WHERE DriverID = @DriverID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteDriver
+    @DriverID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Drivers WHERE DriverID = @DriverID;
+END
+```
+
+---
+
+## 🔹 5. `Trucks`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateTruck
+    @LicensePlate NVARCHAR(20),
+    @BluetoothPrinterID NVARCHAR(100),
+    @TemperatureSensorID NVARCHAR(100)
+AS
+BEGIN
+    INSERT INTO Trucks (TruckID, LicensePlate, BluetoothPrinterID, TemperatureSensorID)
+    VALUES (NEWID(), @LicensePlate, @BluetoothPrinterID, @TemperatureSensorID);
+END
+
+-- Read
+CREATE PROCEDURE GetTruck
+    @TruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Trucks WHERE TruckID = @TruckID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTruck
+    @TruckID UNIQUEIDENTIFIER,
+    @LicensePlate NVARCHAR(20),
+    @BluetoothPrinterID NVARCHAR(100),
+    @TemperatureSensorID NVARCHAR(100)
+AS
+BEGIN
+    UPDATE Trucks
+    SET LicensePlate = @LicensePlate, BluetoothPrinterID = @BluetoothPrinterID, TemperatureSensorID = @TemperatureSensorID
+    WHERE TruckID = @TruckID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTruck
+    @TruckID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Trucks WHERE TruckID = @TruckID;
+END
+```
+
+---
+
+## 🔹 6. `Deliveries`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateDelivery
+    @OrderID UNIQUEIDENTIFIER,
+    @DriverID UNIQUEIDENTIFIER,
+    @TruckID UNIQUEIDENTIFIER,
+    @StartTime DATETIME,
+    @EndTime DATETIME,
+    @DeliveryStatus NVARCHAR(50)
+AS
+BEGIN
+    INSERT INTO Deliveries (DeliveryID, OrderID, DriverID, TruckID, StartTime, EndTime, DeliveryStatus)
+    VALUES (NEWID(), @OrderID, @DriverID, @TruckID, @StartTime, @EndTime, @DeliveryStatus);
+END
+
+-- Read
+CREATE PROCEDURE GetDelivery
+    @DeliveryID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Deliveries WHERE DeliveryID = @DeliveryID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateDelivery
+    @DeliveryID UNIQUEIDENTIFIER,
+    @DriverID UNIQUEIDENTIFIER,
+    @TruckID UNIQUEIDENTIFIER,
+    @StartTime DATETIME,
+    @EndTime DATETIME,
+    @DeliveryStatus NVARCHAR(50)
+AS
+BEGIN
+    UPDATE Deliveries
+    SET DriverID = @DriverID,
+        TruckID = @TruckID,
+        StartTime = @StartTime,
+        EndTime = @EndTime,
+        DeliveryStatus = @DeliveryStatus
+    WHERE DeliveryID = @DeliveryID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteDelivery
+    @DeliveryID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Deliveries WHERE DeliveryID = @DeliveryID;
+END
+```
+
+---
+
+## 🔹 7. `TemperatureReadings`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateTemperatureReading
+    @TruckID UNIQUEIDENTIFIER,
+    @DeliveryID UNIQUEIDENTIFIER,
+    @Temperature DECIMAL(5,2),
+    @IsOutOfRange BIT
+AS
+BEGIN
+    INSERT INTO TemperatureReadings (ReadingID, TruckID, DeliveryID, RecordedAt, Temperature, IsOutOfRange)
+    VALUES (NEWID(), @TruckID, @DeliveryID, GETDATE(), @Temperature, @IsOutOfRange);
+END
+
+-- Read
+CREATE PROCEDURE GetTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER,
+    @Temperature DECIMAL(5,2),
+    @IsOutOfRange BIT
+AS
+BEGIN
+    UPDATE TemperatureReadings
+    SET Temperature = @Temperature,
+        IsOutOfRange = @IsOutOfRange
+    WHERE ReadingID = @ReadingID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTemperatureReading
+    @ReadingID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM TemperatureReadings WHERE ReadingID = @ReadingID;
+END
+```
+
+---
+
+## 🔹 8. `TemperatureThresholds`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateTemperatureThreshold
+    @MinTemperature DECIMAL(5,2),
+    @MaxTemperature DECIMAL(5,2),
+    @EffectiveFrom DATETIME,
+    @EffectiveTo DATETIME
+AS
+BEGIN
+    INSERT INTO TemperatureThresholds (ThresholdID, MinTemperature, MaxTemperature, EffectiveFrom, EffectiveTo)
+    VALUES (NEWID(), @MinTemperature, @MaxTemperature, @EffectiveFrom, @EffectiveTo);
+END
+
+-- Read
+CREATE PROCEDURE GetTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER,
+    @MinTemperature DECIMAL(5,2),
+    @MaxTemperature DECIMAL(5,2),
+    @EffectiveFrom DATETIME,
+    @EffectiveTo DATETIME
+AS
+BEGIN
+    UPDATE TemperatureThresholds
+    SET MinTemperature = @MinTemperature,
+        MaxTemperature = @MaxTemperature,
+        EffectiveFrom = @EffectiveFrom,
+        EffectiveTo = @EffectiveTo
+    WHERE ThresholdID = @ThresholdID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteTemperatureThreshold
+    @ThresholdID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM TemperatureThresholds WHERE ThresholdID = @ThresholdID;
+END
+```
+
+---
+
+## 🔹 9. `Alerts`
+
+```sql
+-- Create
+CREATE PROCEDURE CreateAlert
+    @DeliveryID UNIQUEIDENTIFIER,
+    @ReadingID UNIQUEIDENTIFIER,
+    @Message NVARCHAR(500),
+    @Resolved BIT
+AS
+BEGIN
+    INSERT INTO Alerts (AlertID, DeliveryID, ReadingID, AlertTime, Message, Resolved)
+    VALUES (NEWID(), @DeliveryID, @ReadingID, GETDATE(), @Message, @Resolved);
+END
+
+-- Read
+CREATE PROCEDURE GetAlert
+    @AlertID UNIQUEIDENTIFIER
+AS
+BEGIN
+    SELECT * FROM Alerts WHERE AlertID = @AlertID;
+END
+
+-- Update
+CREATE PROCEDURE UpdateAlert
+    @AlertID UNIQUEIDENTIFIER,
+    @Message NVARCHAR(500),
+    @Resolved BIT
+AS
+BEGIN
+    UPDATE Alerts
+    SET Message = @Message,
+        Resolved = @Resolved
+    WHERE AlertID = @AlertID;
+END
+
+-- Delete
+CREATE PROCEDURE DeleteAlert
+    @AlertID UNIQUEIDENTIFIER
+AS
+BEGIN
+    DELETE FROM Alerts WHERE AlertID = @AlertID;
+END
+```
+
+---
+
+✅ These procedures give you **full transactional control** over all entities involved in the food delivery tracking and IoT monitoring system.
+
+Would you like:
+
+* All scripts bundled in a `.sql` file for download?
+* Sample execution scripts for testing these procedures?
+* Triggers to auto-generate alerts when temperature exceeds thresholds?
+
+
+---
+
+## 📊 **Use Case Flow**
+
+1. **Order Placed** → Linked to a customer.
+2. **Order Assigned** → A driver, truck, and delivery entry are created.
+3. **During Delivery**:
+
+   * Temperature sensor records data every 10s.
+   * Each reading is checked against current threshold.
+   * If out of range → record as `IsOutOfRange = 1` and create an alert.
+4. **Post Delivery**:
+
+   * Analytics dashboards use `TemperatureReadings` to display delivery compliance and performance KPIs.
+
+---
+
+
+
+Set Up Steps 
+
+Creating a serverless API using Azure that leverages Service Bus to communicate with an SQL Database involves several steps. Here's a high-level overview of how you can set this up:
+
+1. **Set Up Azure SQL Database**:
+   - Create an Azure SQL Database instance.
+   - Set up the necessary tables and schemas you'll need for your application.
+
+2. **Create Azure Service Bus**:
+   - Set up an Azure Service Bus namespace.
+   - Within the namespace, create a queue or topic (based on your requirement).
+
+3. **Deploy Serverless API using Azure Functions**:
+   - Create a new Azure Function App.
+   - Develop an HTTP-triggered function that will act as your API endpoint.
+   - In this function, when data is received, send a message to the Service Bus queue or topic.
+
+4. **Deploy 2 Service Bus Triggered Function**:
+   - Create another Azure Function that is triggered by the Service Bus queue or topic.
+   - This function will read the message from the Service Bus and process it. The processing might involve parsing the message and inserting the data into the Azure SQL Database.
+
+5. **Deploy a Timer Triggered Function**:
+   - Create another Azure Function that is triggered when a file is dropped in a container.
+   - This function will stream in a file, read it and place on the service bus topic.
+
+6. **Implement Error Handling**:
+   - Ensure that you have error handling in place. If there's a failure in processing the message and inserting it into the database, you might want to log the error or move the message to a dead-letter queue.
+
+7. **Secure Your Functions**:
+   - Ensure that your HTTP-triggered function (API endpoint) is secured, possibly using Azure Active Directory or function keys.
+
+8. **Optimize & Monitor**:
+   - Monitor the performance of your functions using Azure Monitor and Application Insights.
+   - Optimize the performance, scalability, and cost by adjusting the function's plan (Consumption Plan, Premium Plan, etc.) and tweaking the configurations.
+
+9. **Deployment**:
+   - Deploy your functions to the Azure environment. You can use CI/CD pipelines using tools like Azure DevOps or GitHub Actions for automated deployments.
+
+By following these steps, you'll have a serverless API in Azure that uses Service Bus as a mediator to process data and store it in an SQL Database. This architecture ensures decoupling between data ingestion and processing, adding a layer of resilience and scalability to your solution.
+
+
+## Appplication Setting 
+
+|Key|Value | Comment|
+|:----|:----|:----|
+|AzureWebJobsStorage|[CONNECTION STRING]|RECOMMENDATION :  store in AzureKey Vault.|
+|ConfigurationPath| [CONFIGURATION FOLDER PATH] |Folder is optional
+|ApiKeyName|[API KEY NAME]|Will be passed in the header  :  the file name of the config.
+|AppName| [APPLICATION NAME]| This is the name of the Function App, used in log analytics|
+|StorageAcctName|[STORAGE ACCOUNT NAME]|Example  "AzureWebJobsStorage"|
+|ServiceBusConnectionString|[SERVICE BUS CONNECTION STRING]|Example  "ServiceBusConnectionString".  Recommmended to store in Key vault.|
+|DatabaseConnection|[DATABASE CONNECTION STRING]|Example  "DatabaseConnection". Recommmended to store in Key vault.|
+|TimerInterval|[TIMER_INTERVAL]|Example  "0 */1 * * * *" 1 MIN|
+
+
+> **Note:**  Look at the configuration file in the **Config** Folder and created a Table to record information.
+
+## Configuration Files 
+
+> **Note:** The **Configuration** is located in the  FunctionApp  in a **Config** Folder.
+
+|FileName|Description|
+|:----|:----|
+|D86B0D1870AB4BA0B1F8C2BFD3576EF3.json| **Create Order** |
+|8732858269AF4D4E9B117BC978A4F017.json| **Read Order** |
+|189FBC4178174FF8AB682CCF302C10D7.json| **Update Order** |
+|5A9EC0C8B0614D20A62E00F2FD3394EA.json| **Delete Order** |
+|57B5DE09426E4215A50D9E44795134A1.json| **Create OrderItems** |
+|CC1F0FF8710F45D58C9140A2C99FC2C8.json| **Read OrderItems** |
+|043EE6490D69431FBA02B95E0096B1C3.json| **Update OrderItems** |
+|2056736B50F24A1C90892348ED2BE850.json| **Delete OrderItems** |
+|2BBF7FEFB5824846B150DFC4A91CD46A.json| **Create Drivers** |
+|4CD3B8C3D41E47749C90C76230AAE9D6.json| **Read Drivers** |
+|01E9E8EB971449E5A9C5BB2252782232.json| **Update Drivers** |
+|E1743267D0424A098525B9DE58A5AAE0.json| **Delete Drivers** |
+|3315B90C8283441E96A9C6C4C6AEE135.json| **Create Trucks** |
+|50A07F1A2EC34D3891451BEBFFA90087.json| **Read Trucks** |
+|271938AC73CE4B97A0E3E4E60B07C2D7.json| **Update Trucks** |
+|D677C0576CCE4ADD81F80FF73FE99E6C.json| **Delete Trucks** |
+|07F0DF841D7045829B9ADAFC7E808B79.json| **Create BluetoothDevices** |
+|7F62736F138E4F7F9370FCD19D4C5B0F.json| **Read BluetoothDevices** |
+|2C44F2D7045E42EC89F746AC0EDEAF25.json| **Update BluetoothDevices** |
+|9039A89694684D72AF0A41340ABEEC63.json| **Delete BluetoothDevices** |
+|E2965EE4ED8A42BD9A80360AF1AD897D.json| **Create TemperatureReadings** |
+|3B56C71039564E77BF5783A1CB9CEE63.json| **Read TemperatureReadings** |
+|0243896124A64F718CED736C0D4415EB.json| **Update TemperatureReadings** |
+|0850D3AF32604613BD2E7904BCDA9188.json| **Delete TemperatureReadings** |
+|C8F11CD518B446DDBA76EC7DBA9FEE51.json| **Create TemperatureAlert** |
+|9D86F31022C3479EB53730FCD557FEDA.json| **Read TemperatureAlert** |
+|7E7098A3BD9C46D4B44EB92A678C84B3.json| **Update TemperatureAlert** |
+|501046680CB6415F91886F33D237428D.json| **Delete TemperatureAlert** |
+|27B1257D33614676BAA6AD7B77DD3F49.json| **Create TemperatureThresholds** |
+|AAF0AA76A91E4E7EA1B1C39EF2A87CB5.json| **Read TemperatureThresholds** |
+|0CC1C24E06A846A4843AD90338A68AD3.json| **Update TemperatureThresholds** |
+|2DC1526BDCA94214B5379734C14DD19F.json| **Delete TemperatureThresholds** |
+|1F604AB9343F4C25AF9ADEB8840A3050.json| **Create Devices** |
+|FE52B9F144F640BDAADD1E681FBF0999.json| **Read Devices** |
+|B47536C505414B268A3567455661F862.json| **Update Devices** |
+|B1ED4985CB214D69A4C2A280D7F4618C.json| **Delete Devices** |
+|B18DA134854E444C86D41EFF9429BF95.json| **Create Deliveries** |
+|0AC191E24413400B8E42E1AABAED867B.json| **Read Deliveries** |
+|C08ED3AF6B074935AAC01D65864FDD3B.json| **Update Deliveries** |
+|2A94E084F539459F90A488EA27C1A33D.json| **Delete Deliveries** |
+|5C58E94AA72B4C60A644AB9BE5C049E4.json| **Create Alerts** |
+|634C5839653E4263A665C9A4442333E3.json| **Read Alerts** |
+|C5A32C4A06A14600A5C96942E0BCF266.json| **Update Alerts** |
+|AB3602BB317146C18EF478428CAA29D0.json| **Delete Alerts** |
+|EAB35A0169B34AF2B5B65632289F92CB.json| **Create Customers** |
+|AB2186CD69F94FC18D2F75DC33C0090F.json| **Read Customers** |
+|1326DD4F23C14FC08CCD7DAE13AF314C.json| **Update Customers** |
+|AB00795BF12D4165A33688253EE128CB.json| **Delete Customers** |
+|43EFE991E8614CFB9EDECF1B0FDED37C.json| **Service Bus Trigger for SQL DB** | Receive JSON payload and insert into SQL DB|
+
+> Create the following blob containers and share in azure storage
+
+|ContainerName|Description|
+|:----|:----|
+|config|Location for the configuration files|
+|pickup|Thes are files that are copied from the SFTP share and dropped in the pickup container |
+|processed|These are files the have been parsed and dropped in th processed container|
+
+|Table|Description|
+|:----|:----|
+|csvbatchfiles|Track the CSV parsed files|
+|training[YYYYMMDD]|N0 SQL DataStore|
+
+
+|Share|Description|
+|:----|:----|
+|training[YYYYMMDD]|Create a share location for SFTP to drop files|
+
+## Service Bus Subscription information
+
+|Subscription Name|Description|
+|:----|:----|
+|request|Create a Topic|
+|nosqlmessage|Create a Subscription|
+|sqlmessage|Create a Subscription|
+
 
 ---
 
@@ -498,8 +1050,6 @@ In **Power BI**, you can use the above schema to create visual dashboards:
 
 ---
 
-Would you like help with the Power BI data model or a sample .pbix structure?
-
 ## 📦 Database Tables (Updated with Azure Metadata)
 
 ### 1. `TemperatureReadings` – Updated for Azure Ingestion
@@ -575,9 +1125,4 @@ Power BI connects to:
 
 ---
 
-Would you like:
-- Sample JSON payload for Service Bus message?
-- Azure Function code to process messages and insert into SQL?
-- Bicep/Terraform deployment template for the resources?
 
-Let me know! I can also generate a full animated diagram or deployment flow if that helps.
